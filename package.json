@@ -4,6 +4,6 @@
     "typescript": "^5.4.5"
   },
   "scripts": {
-    "build": "npx esbuild --outfile=out/main.js --bundle --sourcemap"
+    "build:dev": "npx esbuild --outfile=out/main.js --bundle --sourcemap ./src/index.ts"
   }
 }
