@@ -1,4 +1,13 @@
-import type { Application, Container } from "pixi.js";
+import type { Application, ColorSource, Container, Graphics } from "pixi.js";
+import { Colors, Constants } from "./constants";
+
+
+function backgroundRect(color: ColorSource, w: number, h: number): Graphics {
+    return new PIXI.Graphics()
+        .beginFill(color)
+        .drawRect(0, 0, w, h)
+        .endFill();
+}
 
 
 export class Game {
@@ -20,18 +29,15 @@ export class Game {
         this.boardPanel = new PIXI.Container();
         this.logPanel = new PIXI.Container();
 
-        const WIDTH: number = 1000;
-        const HEIGHT: number = 500;
+        this.infoPanel.position.set(Constants.INFO_X, Constants.INFO_Y);
+        this.actionPanel.position.set(Constants.ACTION_X, Constants.ACTION_Y);
+        this.boardPanel.position.set(Constants.BOARD_X, Constants.BOARD_Y);
+        this.logPanel.position.set(Constants.LOG_X, Constants.LOG_Y);
 
-        this.infoPanel.position.set(0, 0);
-        this.actionPanel.position.set(200, 400);
-        this.boardPanel.position.set(200, 0);
-        this.logPanel.position.set(700, 0);
-
-        this.infoPanel.addChild(new PIXI.Graphics().rect(0, 0, 200, 500).fill({ color: 0xff0000 }));
-        this.actionPanel.addChild(new PIXI.Graphics().rect(0, 0, 500, 100).fill({ color: 0x00ff00 }));
-        this.boardPanel.addChild(new PIXI.Graphics().rect(0, 0, 500, 400).fill({ color: 0x0000ff }));
-        this.logPanel.addChild(new PIXI.Graphics().rect(0, 0, 300, 500)).fill({ color: 0x00ffff });
+        this.infoPanel.addChild(backgroundRect(Colors.LIGHT_CYAN, Constants.INFO_W, Constants.INFO_H));
+        this.actionPanel.addChild(backgroundRect(Colors.LIGHT_RED, Constants.ACTION_W, Constants.ACTION_H));
+        this.boardPanel.addChild(backgroundRect(Colors.LIGHT_BLUE, Constants.BOARD_W, Constants.BOARD_H));
+        this.logPanel.addChild(backgroundRect(Colors.LIGHT_PINK, Constants.LOG_W, Constants.LOG_H));
 
         this.stage.addChild(
             this.infoPanel,
@@ -40,10 +46,10 @@ export class Game {
             this.logPanel
         );
 
-        const obj = new PIXI.Graphics();
-        obj
-            .circle(50, 50, 20)
-            .fill({ color: 0xff00ff, alpha: 1.0 });
-        this.infoPanel.addChild(obj);
+        this.stage.on('pointertap', event => this.onPointerTap(event));
+    }
+
+    onPointerTap(event: PointerEvent): void {
+        console.log(`Tapped at ${event.screenX}, ${event.screenY}`);
     }
 }

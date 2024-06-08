@@ -1,3 +1,4 @@
+import { Colors, Constants } from "./constants";
 import { Game } from "./game";
 
 declare global {
@@ -11,17 +12,16 @@ declare global {
 async function main() {
     
     // Loading ...
-    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
-    PIXI.settings.RESOLUTION = window.devicePixelRatio;
 
-    const app = new PIXI.Application();
-
-    app.init({
-        background: 0x00ffff,
-        width: 1000,
-        height: 500,
-        view: document.getElementById('screen') as HTMLCanvasElement
+    const app = new PIXI.Application({
+        antialias: false,
+        powerPreference: 'high-performance',
+        resolution: window.devicePixelRatio,
+        background: Colors.BLACK,
+        width: Constants.WIDTH,
+        height: Constants.HEIGHT,
     });
+    document.body.appendChild(app.view as any);
     window.game = new Game(app);
 }
 

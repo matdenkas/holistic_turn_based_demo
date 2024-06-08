@@ -1,15 +1,13 @@
 # holistic_turn_based_demo
 
-
-
-## Build
-
-Build project:
 ```bash
-npx tsc
-```
+# Setup (First Time)
+$ npm install
 
-Compiler watch:
-```bash 
-npx tsc -w
+# Build + Test
+$ npm run build:dev
+
+# Viewing
+# Navigate to localhost:8008
+$ npm run serve
 ```
