@@ -1,5 +1,9 @@
 {
   "devDependencies": {
+    "esbuild": "^0.21.4",
     "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "npx esbuild --outfile=out/main.js --bundle --sourcemap"
   }
 }
