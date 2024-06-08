@@ -1,21 +1,25 @@
 {
+  "name": "prototype",
+  "private": true,
   "version": "0.1",
   "devDependencies": {
-    "esbuild": "0.21.4",
-    "typescript": "5.4.5",
-    "pixi.js": "8.1.6",
-    "jest": "29.7.0",
     "@types/jest": "29.5.12",
+    "cpy-cli": "^5.0.0",
+    "esbuild": "0.21.4",
+    "jest": "29.7.0",
+    "pixi.js": "7.4.2",
     "ts-jest": "29.1.4",
-    "ts-loader": "9.5.1"
+    "ts-loader": "9.5.1",
+    "typescript": "5.4.5"
   },
   "scripts": {
     "test": "npx tsc && npx jest",
     "compile:dev": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=true --sourcemap ./src/main.ts",
     "compile:prod": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=false --minify ./src/main.ts",
-    "copy": "cp index.html build/index.html && cp -r lib build",
+    "copy": "cpy index.html build && cpy lib build",
     "build:dev": "npm run test && npm run compile:dev && npm run copy",
-    "build:prod": "npm run test && npm run compile:prod && npm run copy"
+    "build:prod": "npm run test && npm run compile:prod && npm run copy",
+    "clean": "rm -rf build"
   },
   "jest": {
     "transform": {
@@ -23,5 +27,5 @@
     },
     "testEnvironment": "node",
     "testRegex": "/test/.*\\.test.ts$"
-  } 
+  }
 }
