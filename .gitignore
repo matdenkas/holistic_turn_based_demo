@@ -1,8 +1,9 @@
 *
 !*/
 !/.gitignore
-
+!/styles.css
 !/src/**/*
+!/styles/**/*
 !/index.html
 !/package.json
 !/package-lock.json
