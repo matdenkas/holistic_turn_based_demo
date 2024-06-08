@@ -2,6 +2,7 @@
 !*/
 !/.gitignore
 
+!/lib/**/*.min.js
 !/src/**/*.ts
 !/test/**/*.test.ts
 

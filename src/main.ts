@@ -11,6 +11,8 @@ declare global {
 async function main() {
     
     // Loading ...
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
+    PIXI.settings.RESOLUTION = window.devicePixelRatio;
 
     const app = new PIXI.Application();
 
