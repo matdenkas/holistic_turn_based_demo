@@ -20,6 +20,19 @@ export class Game {
         this.boardPanel = new PIXI.Container();
         this.logPanel = new PIXI.Container();
 
+        const WIDTH: number = 1000;
+        const HEIGHT: number = 500;
+
+        this.infoPanel.position.set(0, 0);
+        this.actionPanel.position.set(200, 400);
+        this.boardPanel.position.set(200, 0);
+        this.logPanel.position.set(700, 0);
+
+        this.infoPanel.addChild(new PIXI.Graphics().rect(0, 0, 200, 500).fill({ color: 0xff0000 }));
+        this.actionPanel.addChild(new PIXI.Graphics().rect(0, 0, 500, 100).fill({ color: 0x00ff00 }));
+        this.boardPanel.addChild(new PIXI.Graphics().rect(0, 0, 500, 400).fill({ color: 0x0000ff }));
+        this.logPanel.addChild(new PIXI.Graphics().rect(0, 0, 300, 500)).fill({ color: 0x00ffff });
+
         this.stage.addChild(
             this.infoPanel,
             this.actionPanel,
@@ -28,8 +41,9 @@ export class Game {
         );
 
         const obj = new PIXI.Graphics();
-        obj.beginFill(0xff0000);
-        obj.drawCircle(50, 50, 20);
+        obj
+            .circle(50, 50, 20)
+            .fill({ color: 0xff00ff, alpha: 1.0 });
         this.infoPanel.addChild(obj);
     }
 }
