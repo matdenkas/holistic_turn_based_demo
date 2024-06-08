@@ -1,9 +1,10 @@
 *
 !*/
 !/.gitignore
-!/styles.css
-!/src/**/*
-!/styles/**/*
+
+!/src/**/*.ts
+!/test/**/*.test.ts
+
 !/index.html
 !/package.json
 !/package-lock.json
