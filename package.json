@@ -11,9 +11,9 @@
   },
   "scripts": {
     "test": "npx tsc && npx jest",
-    "compile:dev": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=true --sourcemap ./src/index.ts",
-    "compile:prod": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=false --minify ./src/index.ts",
-    "copy": "cp index.html build/index.html && cp -r lib build/lib",
+    "compile:dev": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=true --sourcemap ./src/main.ts",
+    "compile:prod": "npx esbuild --outfile=build/main.js --bundle --define:DEBUG=false --minify ./src/main.ts",
+    "copy": "cp index.html build/index.html && cp -r lib build",
     "build:dev": "npm run test && npm run compile:dev && npm run copy",
     "build:prod": "npm run test && npm run compile:prod && npm run copy"
   },
