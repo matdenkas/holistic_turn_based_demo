@@ -9,20 +9,10 @@ export const enum Constants {
     INFO_W = 0.2 * WIDTH,
     INFO_H = HEIGHT,
 
-    BOARD_X = INFO_W,
-    BOARD_Y = 0,
-    BOARD_W = 0.6 * WIDTH,
-    BOARD_H = 0.8 * HEIGHT,
-
     ACTION_X = INFO_W,
-    ACTION_Y = BOARD_H,
-    ACTION_W = BOARD_W,
-    ACTION_H = 0.2 * HEIGHT,
-
-    LOG_X = BOARD_X + BOARD_W,
-    LOG_Y = 0,
-    LOG_W = 0.2 * WIDTH,
-    LOG_H = HEIGHT
+    ACTION_Y = 0.9 * HEIGHT,
+    ACTION_W = 0.6 * WIDTH,
+    ACTION_H = 0.1 * HEIGHT,
 }
 
 export const enum Colors {
@@ -31,6 +21,8 @@ export const enum Colors {
     LIGHT_BLUE = 0xacd5f2,
     LIGHT_RED = 0xf09f86,
     LIGHT_PINK = 0xedbff2,
+
+    DARK_GRAY = 0x3d3d3b,
 
     BLACK = 'black',
 }

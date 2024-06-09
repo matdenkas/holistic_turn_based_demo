@@ -1,4 +1,4 @@
-import { Container, Text } from "pixi.js";
+import type { Container, Text } from "pixi.js";
 import { Colors, Constants } from "./constants";
 
 
@@ -9,7 +9,7 @@ const PADDING_HALF: number = 5;
 /**
  * The panel to the right hand side of the screen, which records actions taken. 
  */
-export class LogPanel {
+export class Log {
 
     private readonly messages: ({ text: string, obj: Text })[];
     private messageHeight: number; // Total height of all messages (including padding)

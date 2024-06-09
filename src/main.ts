@@ -12,7 +12,12 @@ declare global {
 async function main() {
     
     // Loading ...
+    // todo: eventually we will want a lot more assets, and asset packing, etc.
+    // For now, I'm just using a single example texture for testing
 
+    const texture = await PIXI.Assets.load('https://upload.wikimedia.org/wikipedia/en/4/49/Creeper_%28Minecraft%29.png');
+
+    console.log(texture);
     const app = new PIXI.Application({
         antialias: false,
         powerPreference: 'high-performance',
@@ -22,7 +27,7 @@ async function main() {
         height: Constants.HEIGHT,
     });
     document.body.appendChild(app.view as any);
-    window.game = new Game(app);
+    new Game(app, texture);
 }
 
 window.onload = () => main();
