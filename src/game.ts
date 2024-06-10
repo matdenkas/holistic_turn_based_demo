@@ -1,16 +1,9 @@
-import type { Application, ColorSource, Container, Graphics, Texture } from "pixi.js";
-import { Colors, Constants } from "./constants";
-import { Log } from "./log";
-import { Board } from "./board";
+import type { Application, Container, Texture } from "pixi.js";
+import { Log as LogPanel } from "./panel/log";
+import { Board } from "./panel/board";
 import { Util } from "./util";
-
-
-function backgroundRect(color: ColorSource, w: number, h: number): Graphics {
-    return new PIXI.Graphics()
-        .beginFill(color)
-        .drawRect(0, 0, w, h)
-        .endFill();
-}
+import { InfoPanel } from "./panel/info";
+import { ActionsPanel } from "./panel/actions";
 
 
 export class Game {
@@ -18,10 +11,12 @@ export class Game {
     readonly stage: Container;
     readonly texture: Texture;
 
-    readonly infoPanel: Container;
-    readonly actionPanel: Container;
+    readonly infoPanel: InfoPanel;
+    readonly actionPanel: ActionsPanel;
     readonly boardPanel: Board;
-    readonly logPanel: Log;
+    readonly logPanel: LogPanel;
+
+    private lastHover: IHoverCallback | null = null;
 
     constructor(app: Application, texture: Texture) {
         window.game = this;
@@ -31,23 +26,13 @@ export class Game {
         this.stage.eventMode = 'static';
         this.texture = texture;
 
-        this.infoPanel = new PIXI.Container();
-        this.actionPanel = new PIXI.Container();
+        this.infoPanel = new InfoPanel(this.stage);
+        this.actionPanel = new ActionsPanel(this.stage);
         this.boardPanel = new Board(this);
-        this.logPanel = new Log(this.stage);
+        this.logPanel = new LogPanel(this.stage);
 
-        this.infoPanel.position.set(Constants.INFO_X, Constants.INFO_Y);
-        this.actionPanel.position.set(Constants.ACTION_X, Constants.ACTION_Y);
-
-        this.infoPanel.addChild(backgroundRect(Colors.LIGHT_CYAN, Constants.INFO_W, Constants.INFO_H));
-        this.actionPanel.addChild(backgroundRect(Colors.LIGHT_RED, Constants.ACTION_W, Constants.ACTION_H));
-
-        this.stage.addChild(
-            this.infoPanel,
-            this.actionPanel,
-        );
-
-        this.stage.on('pointertap', event => this.onPointerTap(event));
+        this.stage.on('pointertap', event => this.onClick(event));
+        this.stage.on('pointermove', event => this.onHover(event));
 
 
         const TILES = [
@@ -77,11 +62,34 @@ export class Game {
         this.logPanel.post('A wild creeper appeared!');
     }
 
-    onPointerTap(event: PointerEvent): void {
-        console.log(`Tapped at ${event.screenX}, ${event.screenY}`);
+    private onClick(event: PointerEvent): boolean {
+        const pos: Point = { x: event.screenX, y: event.screenY } as const;
+        
+        return Game.tryClick(this.boardPanel, pos);
+            // can chain additional things here with &&, i.e. short circuiting
+    }
 
-        if (Util.isInPanel(event, this.boardPanel)) {
-            this.boardPanel.onPointerTap(event);
+    private static tryClick(panel: Panel & { onClick(pos: Point): boolean }, pos: Point): boolean {
+        return Util.isInPanel(pos, panel) && panel.onClick(Util.relativeTo(pos, panel));
+    }
+
+    private onHover(event: PointerEvent): boolean {
+        const pos: Point = { x: event.screenX, y: event.screenY } as const;
+        
+        return this.tryHover(this.boardPanel, pos);
+            // can chain additional things here with &&, i.e. short circuiting
+    }
+
+    private tryHover(panel: Panel & { onHover(pos: Point): IHoverCallback | null }, pos: Point): boolean {
+        let hover: IHoverCallback | null;
+        if (Util.isInPanel(pos, panel) && (hover = panel.onHover(Util.relativeTo(pos, panel))) !== this.lastHover) {
+            // Note that either of `lastHover` or `hover` may be null here
+            // We simply end the previous hover (if present), switch to the new value (may be null) and then restart the hover (if present)
+            this.lastHover?.onEndHover();
+            this.lastHover = hover;
+            this.lastHover?.onStartHover();
+            return true;
         }
+        return false;
     }
 }

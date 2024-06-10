@@ -1,8 +1,8 @@
-import type { Container } from "pixi.js";
-import { Colors, Constants } from "./constants";
-import { Creeper, Entity } from "./entity";
-import { Util } from "./util";
-import { Game } from "./game";
+import type { Container, Graphics } from "pixi.js";
+import { Colors, Constants } from "../constants";
+import { Creeper, Entity } from "../entity";
+import { Util } from "../util";
+import { Game } from "../game";
 
 
 interface BoardInfo {
@@ -94,16 +94,34 @@ export class Board {
         // 4. Animate / Feedback
     }
 
-    onPointerTap(event: MouseEvent): void {
-        const pos = Util.relativeTo(event, this);
-        
-        const tilePos = this.untranslatePos(pos.screenX, pos.screenY);
+    onClick(pos: Point): boolean {
+        const tilePos = this.untranslatePos(pos.x, pos.y);
+
         if (Util.isIn(tilePos.x, tilePos.y, 0, 0, this.tileWidth, this.tileHeight)) {
-            const tile = this.tileAt(tilePos.x, tilePos.y);
-            this.game.logPanel.post(`${['Sand', 'Grass', 'Water', 'Rock'][tile.id]} Tile ${tile.x}, ${tile.y}`)
+            // Clicked on a tile, for now just log a message
+            const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
+            this.game.logPanel.post(`${['Sand', 'Grass', 'Water', 'Rock'][tile.id]} Tile ${tile.x}, ${tile.y}`);
+            return true;
         }
+        return false;
     }
 
+    onHover(pos: Point): IHoverCallback | null {
+        const tilePos = this.untranslatePos(pos.x, pos.y);
+
+        if (Util.isIn(tilePos.x, tilePos.y, 0, 0, this.tileWidth, this.tileHeight)) {
+            // Hovering on a tile, so highlight it
+            // Return a callback that can both hover, and un-hover the targeted tile
+            const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
+            return {
+                onStartHover() { tile.startHover(); },
+                onEndHover() { tile.endHover(); }
+            };
+        }
+
+        return null;
+    }
+ 
     private addEntity(entity: Entity): void {
         this.entities.push(entity);
         this.entityContainer.addChild(entity.root);
@@ -172,6 +190,8 @@ class Tile {
     readonly x: number;
     readonly y: number;
 
+    hover: Graphics | null = null;
+
     constructor(id: TileId, x: number, y: number) {
         this.root = new PIXI.Container();
         this.id = id;
@@ -182,5 +202,17 @@ class Tile {
             .beginFill(TILE_COLORS[id])
             .drawRect(-Tile.SIZE / 2 - 1, -Tile.SIZE / 2 - 1, Tile.SIZE - 2, Tile.SIZE - 2)
             .endFill());
+    }
+
+    startHover(): void {
+        this.root.addChild(this.hover = new PIXI.Graphics()
+            .beginFill(0xffffff, 0.3)
+            .drawRect(-Tile.SIZE / 2 - 1, -Tile.SIZE / 2 - 1, Tile.SIZE - 2, Tile.SIZE - 2)
+            .endFill());
+    }
+
+    endHover(): void {
+        this.hover?.removeFromParent();
+        this.hover = null;
     }
 }

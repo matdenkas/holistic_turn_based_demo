@@ -1,5 +1,5 @@
 import type { Container, Text } from "pixi.js";
-import { Colors, Constants } from "./constants";
+import { Colors, Constants } from "../constants";
 
 
 const PADDING: number = 10;
