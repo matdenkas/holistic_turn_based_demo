@@ -1,4 +1,4 @@
-import { Container, ColorSource, ITextStyle, Point, Graphics} from "pixi.js";
+import type { Container, ColorSource, ITextStyle, Point, Graphics} from "pixi.js";
 import { Colors, Constants } from "../constants";
 
 
@@ -35,7 +35,7 @@ export class InfoBox {
     readonly width: number;
     readonly height: number;
 
-    readonly infoContainer: Container;
+    private readonly infoContainer: Container;
 
     constructor(parent: InfoPanel) {
         this.root = new PIXI.Container();
@@ -65,7 +65,7 @@ export class InfoBox {
     /**
      * Update the info box with a new container. 
      */
-    public updateInfo_raw(info: Container) {
+    public updateInfoRaw(info: Container) {
         this.infoContainer.removeChildren();
         this.infoContainer.addChild(info);
     }
@@ -73,58 +73,58 @@ export class InfoBox {
     /**
      * A helper method for updating the info box
      */
-    public updateInfo_color_pos_text_header(color: ColorSource, pos: Point, headerText: string, bodyText: string, headerStyle?: Partial<ITextStyle>, bodyStyle?: Partial<ITextStyle>) {
+    public updateInfoColorPosHeaderBody(color: ColorSource, pos: Point, headerText: string, bodyText: string, headerStyle?: Partial<ITextStyle>, bodyStyle?: Partial<ITextStyle>) {
 
         // If no styles were defined we define defaults here
         headerStyle = this.sanitizeHeaderStyle(headerStyle);
         bodyStyle = this.sanitizeBodyStyle(bodyStyle);
 
-        const new_container = new PIXI.Container();
+        const newContainer = new PIXI.Container();
 
         // Color Circle
-        const circleCenter = new Point(
+        const circleCenter = new PIXI.Point(
             this.width * 0.15,
             this.height * 0.1
         );
-        const colorCircle = new Graphics()
+        const colorCircle = new PIXI.Graphics()
             .lineStyle(2)
             .beginFill(color)
             .drawCircle(circleCenter.x , circleCenter.y, circleCenter.x * 0.5) 
             .endFill();
-        new_container.addChild(colorCircle);
+        newContainer.addChild(colorCircle);
         
 
         // Header text
-        const headerPos = new Point(
+        const headerPos = new PIXI.Point(
             circleCenter.x * 2,
             circleCenter.y / 2
         );
         const headerContainer = new PIXI.Container();
         headerContainer.position.set(headerPos.x, headerPos.y);
         headerContainer.addChild(new PIXI.Text(headerText, headerStyle));
-        new_container.addChild(headerContainer);
+        newContainer.addChild(headerContainer);
 
         // Position Text
-        const posPos = new Point(
+        const posPos = new PIXI.Point(
             circleCenter.x / 2,
             circleCenter.y * 2
         );
         const posContainer = new PIXI.Container();
         posContainer.position.set(posPos.x, posPos.y);
         posContainer.addChild(new PIXI.Text(`${pos.x.toString().length == 1 ? '0' : ''}${pos.x}\t-\t${pos.y.toString().length == 1 ? '0' : ''}${pos.y}`, bodyStyle));
-        new_container.addChild(posContainer);
+        newContainer.addChild(posContainer);
 
         // Body Text
-        const bodyPos = new Point(
+        const bodyPos = new PIXI.Point(
             headerPos.x,
             posPos.y
         );
         const bodyContainer = new PIXI.Container();
         bodyContainer.position.set(bodyPos.x, bodyPos.y);
         bodyContainer.addChild(new PIXI.Text(bodyText, bodyStyle));
-        new_container.addChild(bodyContainer);
+        newContainer.addChild(bodyContainer);
 
-        this.updateInfo_raw(new_container);
+        this.updateInfoRaw(newContainer);
     }
 
 

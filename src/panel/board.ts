@@ -1,4 +1,4 @@
-import { Container, Graphics, Point } from "pixi.js";
+import type { Container, Graphics, Point } from "pixi.js";
 import { Colors, Constants } from "../constants";
 import { Creeper, Entity } from "../entity";
 import { Util } from "../util";
@@ -114,9 +114,9 @@ export class Board {
             const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
             
             // Update info box
-            this.game.infoPanel.infoBox.updateInfo_color_pos_text_header(
+            this.game.infoPanel.infoBox.updateInfoColorPosHeaderBody(
                 TILE_COLORS[tile.id], 
-                new Point(tile.x, tile.y), 
+                new PIXI.Point(tile.x, tile.y), 
                 ['Sand', 'Grass', 'Water', 'Rock'][tile.id], 
                 ['Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 'Such nice soft grass!', 'Remember slimes are allergic to water!', 'Rock solid :3'][tile.id]
             );
