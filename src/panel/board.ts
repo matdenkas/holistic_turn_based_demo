@@ -1,4 +1,4 @@
-import type { Container, Graphics } from "pixi.js";
+import type { Container, Graphics, Point } from "pixi.js";
 import { Colors, Constants } from "../constants";
 import { Creeper, Entity } from "../entity";
 import { Util } from "../util";
@@ -111,8 +111,17 @@ export class Board {
 
         if (Util.isIn(tilePos.x, tilePos.y, 0, 0, this.tileWidth, this.tileHeight)) {
             // Hovering on a tile, so highlight it
-            // Return a callback that can both hover, and un-hover the targeted tile
             const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
+            
+            // Update info box
+            this.game.infoPanel.infoBox.updateInfoColorPosHeaderBody(
+                TILE_COLORS[tile.id], 
+                new PIXI.Point(tile.x, tile.y), 
+                ['Sand', 'Grass', 'Water', 'Rock'][tile.id], 
+                ['Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 'Such nice soft grass!', 'Remember slimes are allergic to water!', 'Rock solid :3'][tile.id]
+            );
+
+            // Return a callback that can both hover, and un-hover the targeted tile
             return {
                 onStartHover() { tile.startHover(); },
                 onEndHover() { tile.endHover(); }
