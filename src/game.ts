@@ -27,7 +27,7 @@ export class Game {
         this.texture = texture;
 
         this.infoPanel = new InfoPanel(this.stage);
-        this.actionPanel = new ActionsPanel(this.stage);
+        this.actionPanel = new ActionsPanel(this);
         this.boardPanel = new Board(this);
         this.logPanel = new LogPanel(this.stage);
 
@@ -62,11 +62,18 @@ export class Game {
         this.logPanel.post('A wild creeper appeared!');
     }
 
+
+    public startMoving(): void {
+        console.log('Moving!!');
+    }
+
+
     private onClick(event: PointerEvent): boolean {
         const pos: Point = { x: event.screenX, y: event.screenY } as const;
         
-        return Game.tryClick(this.boardPanel, pos);
-            // can chain additional things here with &&, i.e. short circuiting
+        return Game.tryClick(this.boardPanel, pos)
+            || Game.tryClick(this.actionPanel, pos);
+            // can chain additional things here with ||, i.e. short circuiting
     }
 
     private static tryClick(panel: Panel & { onClick(pos: Point): boolean }, pos: Point): boolean {
@@ -76,8 +83,9 @@ export class Game {
     private onHover(event: PointerEvent): boolean {
         const pos: Point = { x: event.screenX, y: event.screenY } as const;
         
-        return this.tryHover(this.boardPanel, pos);
-            // can chain additional things here with &&, i.e. short circuiting
+        return this.tryHover(this.boardPanel, pos)
+            || this.tryHover(this.actionPanel, pos);
+            // can chain additional things here with ||, i.e. short circuiting
     }
 
     private tryHover(panel: Panel & { onHover(pos: Point): IHoverCallback | null }, pos: Point): boolean {

@@ -17,7 +17,6 @@ async function main() {
 
     const texture = await PIXI.Assets.load('https://upload.wikimedia.org/wikipedia/en/4/49/Creeper_%28Minecraft%29.png');
 
-    console.log(texture);
     const app = new PIXI.Application({
         antialias: false,
         powerPreference: 'high-performance',
