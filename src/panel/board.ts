@@ -33,6 +33,12 @@ export class Board {
     private tileWidth: number;
     private tileHeight: number;
 
+    // Game state
+    private turnCounter: number = 0;
+    private turnSeconds: number = 10;
+    private currentTurnTime: number = 0;
+    private forceNextFrame: Boolean = false;
+
     constructor(game: Game) {
         this.game = game;
         this.root = new PIXI.Container();
@@ -59,6 +65,7 @@ export class Board {
         this.tileHeight = 0;
 
         game.stage.addChild(this.root);
+        this.startGame();
     }
 
 
@@ -87,7 +94,28 @@ export class Board {
         this.moveEntity(creeper, 4, 3);
     }
 
+    startGame(): void {
+        PIXI.Ticker.shared.add(this.tick, this);
+    }
+
+    tick(delta: number) {
+        this.currentTurnTime += delta;
+        if(this.currentTurnTime >= 60 * this.turnSeconds || this.forceNextFrame) {
+            this.turnCounter++;
+            
+            this.currentTurnTime = 0;
+            this.forceNextFrame = false;
+            this.updateAll();
+        }
+
+        this.game.infoPanel.gameStateBox.updateGameStateUi(this.currentTurnTime, this.turnCounter, this.turnSeconds);
+    }
+
     updateAll(): void {
+
+        
+
+
         // 1. AI select all their plan (preUpdate)
         // 2. Sort all entities
         // 3. All update (update)

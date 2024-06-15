@@ -1,4 +1,4 @@
-import type { Container, ColorSource, ITextStyle, Point, Graphics} from "pixi.js";
+import type { Container, ColorSource, ITextStyle, Point } from "pixi.js";
 import { Colors, Constants } from "../constants";
 
 
@@ -9,6 +9,8 @@ export class InfoPanel {
     readonly height: number;
 
     readonly infoBox: InfoBox;
+    readonly gameStateBox: GameStateBox;
+    
 
     constructor(parent: Container) {
         this.root = new PIXI.Container();
@@ -24,6 +26,7 @@ export class InfoPanel {
         this.root.addChild(rect);
 
         this.infoBox = new InfoBox(this);
+        this.gameStateBox = new GameStateBox(this);
 
         parent.addChild(this.root);
     }
@@ -157,4 +160,86 @@ export class InfoBox {
     }
 
     
+}
+
+
+
+export class GameStateBox {
+    readonly root: Container;
+    readonly width: number;
+    readonly height: number;
+
+    private readonly gameStateContainer: Container;
+
+    constructor(parent: InfoPanel) {
+        this.root = new PIXI.Container();
+        this.root.position.set(0, 0);
+        
+        this.width = 0.9 * parent.width;
+        this.height = 0.2 * parent.height;
+
+        let x = parent.width * 0.05;
+        let y = parent.height * 0.05;
+        const rect = new PIXI.Graphics()
+            .lineStyle(5)
+            .beginFill(Colors.LIGHT_BLUE_WHITE)
+            .drawRoundedRect(x, y, this.width, this.height, 45)
+            .endFill()
+        this.root.addChild(rect)
+
+        // Its this classes responsibility to dispose of old information
+        // thus it manages the sub-container
+        this.gameStateContainer = new PIXI.Container();
+        this.gameStateContainer.position.set(x, y);
+        this.root.addChild(this.gameStateContainer)
+
+        parent.root.addChild(this.root);
+    }
+
+
+      /**
+     * Update the info box with a new container. 
+     */
+      public updateGameStateUi(currentTurnTime: number, turnCounter: number, turnSeconds: number) {
+
+        const newContainer = new PIXI.Container();
+
+        // Time left timer
+        let percentTurnTaken = currentTurnTime / (turnSeconds * 60);
+        let timerTakenLength = percentTurnTaken * (this.width * 0.9);
+        console.log(percentTurnTaken, timerTakenLength)
+
+        const timerInner = new PIXI.Graphics()
+            .beginFill(Colors.LIGHT_RED)
+            .drawRoundedRect(this.width * 0.05, this.height * 0.5, timerTakenLength, this.height * .1, 45)
+            .endFill();
+        newContainer.addChild(timerInner);
+
+        const timerOuter = new PIXI.Graphics()
+        .lineStyle(2)
+        .drawRoundedRect(this.width * 0.05, this.height * 0.5, this.width * .9, this.height * .1, 45)
+        newContainer.addChild(timerOuter);
+
+
+        // Turn number
+        const headerPos = new PIXI.Point(
+            this.width * .1,
+            this.height * .2
+        );
+        const headerContainer = new PIXI.Container();
+        headerContainer.position.set(headerPos.x, headerPos.y);
+        headerContainer.addChild(new PIXI.Text(`Turn: ${turnCounter}`, 
+            {
+                fontFamily: 'Arial',
+                fontWeight: 'bold',
+                fontSize: 28,
+                fill: 'black',
+                wordWrap: false,
+            }
+        ));
+        newContainer.addChild(headerContainer);
+
+        this.gameStateContainer.removeChildren();
+        this.gameStateContainer.addChild(newContainer);
+    }
 }
