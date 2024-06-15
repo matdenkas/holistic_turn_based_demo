@@ -18,7 +18,7 @@
     "test": "tsc && jest",
     "compile:dev": "esbuild --outfile=build/main.js --bundle --define:DEBUG=true --sourcemap ./src/main.ts",
     "compile:prod": "esbuild --outfile=build/main.js --bundle --define:DEBUG=false --minify ./src/main.ts",
-    "copy": "cpy index.html build && cpy lib build",
+    "copy": "cpy index.html build && cpy lib build && cpy assets build",
     "build:dev": "npm run test && npm run compile:dev && npm run copy",
     "build:prod": "npm run test && npm run compile:prod && npm run copy",
     "clean": "rimraf build",

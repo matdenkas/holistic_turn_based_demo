@@ -15,7 +15,7 @@ async function main() {
     // todo: eventually we will want a lot more assets, and asset packing, etc.
     // For now, I'm just using a single example texture for testing
 
-    const texture = await PIXI.Assets.load('https://upload.wikimedia.org/wikipedia/en/4/49/Creeper_%28Minecraft%29.png');
+    const texture = await PIXI.Assets.load('./assets/GirlGirl.png');
 
     const app = new PIXI.Application({
         antialias: false,
