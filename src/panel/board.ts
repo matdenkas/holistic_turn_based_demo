@@ -1,8 +1,10 @@
-import type { Container, Graphics, Point } from "pixi.js";
+import { ColorSource, Container, Graphics } from "pixi.js";
 import { Colors, Constants } from "../constants";
-import { Creeper, Entity } from "../entity";
+import { Entity } from "../entity";
 import { Util } from "../util";
-import { Game } from "../game";
+import { Game, State } from "../game";
+import { Pathfinder } from "../pathfinder";
+import { Player } from "../player";
 
 
 interface BoardInfo {
@@ -84,18 +86,41 @@ export class Board {
 
                 tile.root.position.set(pos.x, pos.y);
                 this.tiles.push(tile);
-                this.entityContainer.addChild(tile.root);
+                this.tileContainer.addChild(tile.root);
             }
         }
-
-        const creeper = new Creeper();
-
-        this.addEntity(creeper);
-        this.moveEntity(creeper, 4, 3);
     }
 
     startGame(): void {
         PIXI.Ticker.shared.add(this.tick, this);
+    }
+
+    public startMoving(): void {
+        // Find all tiles that are reachable by the player, and mark them as movable
+        const player: Player = this.game.player;
+        const movable: Set<Point> = Pathfinder.findAll(player.pos, player.movementSpeed, pos => {
+            if (!Util.isIn(pos.x, pos.y, 0, 0, this.tileWidth, this.tileHeight)) {
+                return Infinity; // Not in bounds, unable to move
+            }
+            
+            const tile = this.tileAt(pos.x, pos.y);
+            if (!tile.properties().isMovable) {
+                return Infinity; // Tile is not movable
+            }
+
+            return 1; // All tiles cost one movement to walk through (for now)
+        });
+
+        // Mark all tiles as movable, which will update their graphics, and flag them as possible move targets
+        for (const pos of movable) {
+            this.tileAt(pos.x, pos.y).setMovable();
+        }
+    }
+
+    public stopMoving(): void {
+        for (const tile of this.tiles) {
+            tile.clearMovable();
+        }
     }
 
     tick(delta: number) {
@@ -112,13 +137,19 @@ export class Board {
     }
 
     updateAll(): void {
-
-        
-
-
         // 1. AI select all their plan (preUpdate)
+        
         // 2. Sort all entities
+        
         // 3. All update (update)
+
+        // For now, just move the player if they have a planned move, then clear their plan
+        const player: Player = this.game.player;
+        if (player.plan) {
+            this.moveEntity(player, player.plan.x, player.plan.y);
+            player.plan = null;
+        }
+
         // 4. Animate / Feedback
     }
 
@@ -126,10 +157,25 @@ export class Board {
         const tilePos = this.untranslatePos(pos.x, pos.y);
 
         if (Util.isIn(tilePos.x, tilePos.y, 0, 0, this.tileWidth, this.tileHeight)) {
-            // Clicked on a tile, for now just log a message
             const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
-            this.game.logPanel.post(`${['Sand', 'Grass', 'Water', 'Rock'][tile.id]} Tile ${tile.x}, ${tile.y}`);
-            return true;
+            
+            // Clicked on a tile, so figure out what we need to do based on the game state
+            switch (this.game.state) {
+                case State.NORMAL:
+                    // Log a message for fun
+                    this.game.logPanel.post(`${tile.properties().name} Tile ${tile.x}, ${tile.y}`);
+                    return true;
+                
+                case State.MOVING:
+                    // If moving, and the tile is movable, we confirm movement
+                    // Then, we need to clear all movable flags
+                    if (tile.isMovable()) {
+                        this.stopMoving();
+                        this.game.confirmMoving(tilePos);
+                        return true;
+                    }
+                    break;
+            }
         }
         return false;
     }
@@ -140,13 +186,14 @@ export class Board {
         if (Util.isIn(tilePos.x, tilePos.y, 0, 0, this.tileWidth, this.tileHeight)) {
             // Hovering on a tile, so highlight it
             const tile: Tile = this.tileAt(tilePos.x, tilePos.y);
+            const properties: TileProperties = tile.properties();
             
             // Update info box
             this.game.infoPanel.infoBox.updateInfoColorPosHeaderBody(
-                TILE_COLORS[tile.id], 
+                properties.color, 
                 new PIXI.Point(tile.x, tile.y), 
-                ['Sand', 'Grass', 'Water', 'Rock'][tile.id], 
-                ['Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 'Such nice soft grass!', 'Remember slimes are allergic to water!', 'Rock solid :3'][tile.id]
+                properties.name, 
+                properties.desc
             );
 
             // Return a callback that can both hover, and un-hover the targeted tile
@@ -159,13 +206,15 @@ export class Board {
         return null;
     }
  
-    private addEntity(entity: Entity): void {
+    public addEntity(entity: Entity): void {
         this.entities.push(entity);
         this.entityContainer.addChild(entity.root);
     }
 
-    private moveEntity(entity: Entity, x: number, y: number): void {
+    public moveEntity(entity: Entity, x: number, y: number): void {
         const pos = this.translatePos(x, y);
+        
+        entity.pos = { x, y };
         entity.root.position.set(pos.x, pos. y);
     }
 
@@ -213,12 +262,30 @@ const enum TileId {
     ROCK
 }
 
-const TILE_COLORS: number[] = [ 0xb8a254, 0x49822f, 0x6093d1, 0x615029 ];
+interface TileProperties {
+    readonly name: string;
+    readonly desc: string;
+    readonly color: ColorSource;
+    readonly isMovable: boolean;
+}
 
 
 class Tile {
 
     static readonly SIZE: number = 42;
+
+    private static readonly PROPERTIES: TileProperties[] = (() => {
+        function of(name: string, desc: string, color: ColorSource, properties: Partial<TileProperties> = {}): TileProperties {
+            return Object.assign({ isMovable: true }, { name, desc, color, ...properties });
+        }
+    
+        return [
+            of('Sand', 'Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 0xb8a254),
+            of('Grass', 'Such nice soft grass!', 0x49822f),
+            of('Water', 'Remember slimes are allergic to water!', 0x6093d1, { isMovable: false }),
+            of('Rock', 'Rock solid :3', 0x615029, { isMovable: false }),
+        ];
+    })();
 
     readonly root: Container;
     readonly width: number = Tile.SIZE;
@@ -228,6 +295,7 @@ class Tile {
     readonly y: number;
 
     hover: Graphics | null = null;
+    move: Graphics | null = null;
 
     constructor(id: TileId, x: number, y: number) {
         this.root = new PIXI.Container();
@@ -236,12 +304,17 @@ class Tile {
         this.y = y;
 
         this.root.addChild(new PIXI.Graphics()
-            .beginFill(TILE_COLORS[id])
+            .beginFill(this.properties().color)
             .drawRect(-Tile.SIZE / 2 - 1, -Tile.SIZE / 2 - 1, Tile.SIZE - 2, Tile.SIZE - 2)
             .endFill());
     }
 
+    public properties(): TileProperties {
+        return Tile.PROPERTIES[this.id];
+    }
+
     startHover(): void {
+        this.endHover();
         this.root.addChild(this.hover = new PIXI.Graphics()
             .beginFill(0xffffff, 0.3)
             .drawRect(-Tile.SIZE / 2 - 1, -Tile.SIZE / 2 - 1, Tile.SIZE - 2, Tile.SIZE - 2)
@@ -251,5 +324,22 @@ class Tile {
     endHover(): void {
         this.hover?.removeFromParent();
         this.hover = null;
+    }
+
+    setMovable(): void {
+        this.clearMovable();
+        this.root.addChild(this.move = new PIXI.Graphics()
+            .beginFill(0x35de62)
+            .drawCircle(0, 0, 0.3 * Tile.SIZE)
+            .endFill());
+    }
+
+    clearMovable(): void {
+        this.move?.removeFromParent();
+        this.move = null;
+    }
+
+    isMovable(): boolean {
+        return this.move != null;
     }
 }

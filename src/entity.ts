@@ -18,13 +18,13 @@ export class Entity {
 
     readonly root: Container;
     readonly properties: EntityProperties;
+
+    pos: Point;
     
     constructor(properties: Partial<EntityProperties>) {
         this.root = new PIXI.Container();
-        this.properties = {
-            canControl: properties.canControl ?? false,
-            canTarget: properties.canTarget ?? false,
-        };
+        this.properties = properties;
+        this.pos = { x: 0, y: 0 };
     }
 
     update(): void {}
@@ -34,26 +34,5 @@ export class Entity {
  * I'm imagining this dictates a lot of simple properties that entities might have
  */
 interface EntityProperties {
-    /**
-     * If `true`, this entity is controllable and can be interacted with
-     */
-    readonly canControl: boolean;
-
-    /**
-     * If `true`, this entity can be targeted as part of an action that requires
-     * a target (for instance an attack).
-     */
-    readonly canTarget: boolean;
-}
-
-export class Creeper extends Entity {
-    constructor() {
-        super({});
-
-        const img = new PIXI.Sprite(window.game.texture);
-        img.anchor.set(0.5, 0.5);
-        img.width = 50;
-        img.height = 100;
-        this.root.addChild(img);
-    }
+    // todo: imagine what properties would go here
 }

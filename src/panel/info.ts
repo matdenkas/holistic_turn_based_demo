@@ -259,8 +259,8 @@ export class GameStateBox {
         newContainer.addChild(timerInner);
 
         const timerOuter = new PIXI.Graphics()
-        .lineStyle(2)
-        .drawRoundedRect(this.width * 0.05, this.height * 0.5, this.width * .9, this.height * .1, 45)
+            .lineStyle(2)
+            .drawRoundedRect(this.width * 0.05, this.height * 0.5, this.width * .9, this.height * .1, 45)
         newContainer.addChild(timerOuter);
 
 
