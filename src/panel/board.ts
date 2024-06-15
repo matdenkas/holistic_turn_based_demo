@@ -37,7 +37,7 @@ export class Board {
     private turnCounter: number = 0;
     private turnSeconds: number = 10;
     private currentTurnTime: number = 0;
-    private forceNextFrame: Boolean = false;
+    public forceNextTurn: Boolean = false;
 
     constructor(game: Game) {
         this.game = game;
@@ -100,11 +100,11 @@ export class Board {
 
     tick(delta: number) {
         this.currentTurnTime += delta;
-        if(this.currentTurnTime >= 60 * this.turnSeconds || this.forceNextFrame) {
+        if(this.currentTurnTime >= 60 * this.turnSeconds || this.forceNextTurn) {
             this.turnCounter++;
-            
+
             this.currentTurnTime = 0;
-            this.forceNextFrame = false;
+            this.forceNextTurn = false;
             this.updateAll();
         }
 

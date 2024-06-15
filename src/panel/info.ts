@@ -1,5 +1,6 @@
 import type { Container, ColorSource, ITextStyle, Point } from "pixi.js";
 import { Colors, Constants } from "../constants";
+import { Util } from "../util";
 
 
 export class InfoPanel {
@@ -29,6 +30,11 @@ export class InfoPanel {
         this.gameStateBox = new GameStateBox(this);
 
         parent.addChild(this.root);
+    }
+
+    onClick(point: Point): boolean {
+        return Util.tryClick(this.gameStateBox, point);
+            // can chain additional things here with &&, i.e. short circuiting
     }
 }
 
@@ -170,6 +176,12 @@ export class GameStateBox {
     readonly height: number;
 
     private readonly gameStateContainer: Container;
+    private readonly arrowBox = {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+    };
 
     constructor(parent: InfoPanel) {
         this.root = new PIXI.Container();
@@ -186,6 +198,38 @@ export class GameStateBox {
             .drawRoundedRect(x, y, this.width, this.height, 45)
             .endFill()
         this.root.addChild(rect)
+
+
+        // Next turn arrow
+        const arrowPoints = [
+            new PIXI.Point(-3, 0),
+            new PIXI.Point(10, 0),
+            new PIXI.Point(10, -4),
+            new PIXI.Point(17, 5),
+            new PIXI.Point(10, 14),
+            new PIXI.Point(10, 9),
+            new PIXI.Point(-3, 9),
+            new PIXI.Point(-3, 0),
+        ] 
+        // Offset the arrow to position it right
+        const offset = new PIXI.Point(this.width * .95, this.height * 0.9);
+        for (const point of arrowPoints) {
+            point.x += offset.x;
+            point.y += offset.y;
+        }
+        // Save click box
+        this.arrowBox.x = arrowPoints[0].x;
+        this.arrowBox.y = arrowPoints[2].y;
+        this.arrowBox.width = arrowPoints[3].x
+        this.arrowBox.height = arrowPoints[4].y
+        //Render
+        const tri = new PIXI.Graphics()
+        .lineStyle(1)
+        .beginFill(Colors.PASTEL_GREEN)
+        .drawPolygon(arrowPoints)
+        .endFill()
+        this.root.addChild(tri)
+
 
         // Its this classes responsibility to dispose of old information
         // thus it manages the sub-container
@@ -207,7 +251,6 @@ export class GameStateBox {
         // Time left timer
         let percentTurnTaken = currentTurnTime / (turnSeconds * 60);
         let timerTakenLength = percentTurnTaken * (this.width * 0.9);
-        console.log(percentTurnTaken, timerTakenLength)
 
         const timerInner = new PIXI.Graphics()
             .beginFill(Colors.LIGHT_RED)
@@ -241,5 +284,14 @@ export class GameStateBox {
 
         this.gameStateContainer.removeChildren();
         this.gameStateContainer.addChild(newContainer);
+    }
+
+    onClick(point: Point): boolean {
+
+        if (Util.isIn(point.x, point.y, this.arrowBox.x, this.arrowBox.y, this.arrowBox.width, this.arrowBox.height)) {
+            window.game.boardPanel.forceNextTurn = true;
+            return true;
+        }
+        return false;
     }
 }

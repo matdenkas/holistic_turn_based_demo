@@ -71,14 +71,12 @@ export class Game {
     private onClick(event: PointerEvent): boolean {
         const pos: Point = { x: event.screenX, y: event.screenY } as const;
         
-        return Game.tryClick(this.boardPanel, pos)
-            || Game.tryClick(this.actionPanel, pos);
-            // can chain additional things here with ||, i.e. short circuiting
+        return Util.tryClick(this.boardPanel, pos)
+            || Util.tryClick(this.actionPanel, pos)
+            || Util.tryClick(this.infoPanel, pos);
+            // can chain additional things here with &&, i.e. short circuiting
     }
 
-    private static tryClick(panel: Panel & { onClick(pos: Point): boolean }, pos: Point): boolean {
-        return Util.isInPanel(pos, panel) && panel.onClick(Util.relativeTo(pos, panel));
-    }
 
     private onHover(event: PointerEvent): boolean {
         const pos: Point = { x: event.screenX, y: event.screenY } as const;

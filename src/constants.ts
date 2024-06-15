@@ -24,6 +24,7 @@ export const enum Colors {
 
     DARK_GRAY = 0x3d3d3b,
     LIGHT_BLUE_WHITE = 0xcae0db,
+    PASTEL_GREEN = 0x96e3aa,
 
     BLACK = 'black',
 }

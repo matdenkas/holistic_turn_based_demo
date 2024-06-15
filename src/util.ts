@@ -11,4 +11,8 @@ export module Util {
     export function relativeTo(pos: Point, panel: Panel): Point {
         return { x: pos.x - panel.root.x, y: pos.y - panel.root.y };
     }
+
+    export function tryClick(panel: Panel & { onClick(pos: Point): boolean }, pos: Point): boolean {
+        return Util.isInPanel(pos, panel) && panel.onClick(Util.relativeTo(pos, panel));
+    }
 }
