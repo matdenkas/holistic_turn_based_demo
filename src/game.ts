@@ -4,6 +4,25 @@ import { Board } from "./panel/board";
 import { Util } from "./util";
 import { InfoPanel } from "./panel/info";
 import { ActionsPanel } from "./panel/actions";
+import { Player } from "./player";
+
+
+/**
+ * The current state of the game, from a player UI perspective
+ * UI elements may check the state to know what to interact with
+ */
+export const enum State {
+    // Normal game play, where you can select actions, tiles, etc.
+    NORMAL,
+    // Moving the player character
+    // - Tiles are displayed movable or not
+    // - Tiles can be selected to "confirm" the movement
+    MOVING,
+    // The state where animations are playing after a turn ends,
+    // and all actions are computed. Nothing can be interacted with
+    // in this state
+    PLAYING,
+}
 
 
 export class Game {
@@ -15,6 +34,10 @@ export class Game {
     readonly actionPanel: ActionsPanel;
     readonly boardPanel: Board;
     readonly logPanel: LogPanel;
+
+    readonly player: Player;
+
+    state: State = State.NORMAL;
 
     private lastHover: IHoverCallback | null = null;
 
@@ -59,12 +82,34 @@ export class Game {
         ]
 
         this.boardPanel.build({ width: 20, height: 20, tiles: TILES });
-        this.logPanel.post('A wild creeper appeared!');
+
+        this.player = new Player();
+        this.boardPanel.addEntity(this.player);
+        this.boardPanel.moveEntity(this.player, 8, 18);
     }
 
 
     public startMoving(): void {
-        console.log('Moving!!');
+        Util.assert(this.state === State.NORMAL);
+
+        this.actionPanel.updateActions([{ text: 'Cancel', callback: () => this.cancelMoving() }]);
+        this.boardPanel.startMoving();
+        this.state = State.MOVING;
+    }
+
+    public confirmMoving(pos: Point): void {
+        Util.assert(this.state === State.MOVING);
+
+        this.player.plan = pos;
+        this.cancelMoving();
+    }
+
+    private cancelMoving(): void {
+        Util.assert(this.state === State.MOVING);
+
+        this.boardPanel.stopMoving();
+        this.actionPanel.updateActions();
+        this.state = State.NORMAL;
     }
 
 
