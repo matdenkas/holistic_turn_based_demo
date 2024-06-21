@@ -85,7 +85,12 @@ export class ActionsPanel {
             newActions = [{
                 text: 'Move',
                 callback: () => this.game.startMoving()
-            }];
+            },
+            {
+                text: 'Summon',
+                callback: () => this.game.startSummon()
+            }    
+        ];
         }
 
         // Remove all previous children

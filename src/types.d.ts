@@ -15,6 +15,11 @@ interface Point {
     readonly y: number;
 }
 
+interface Textures<T> {
+    girl: T,
+    fox: T,
+    slime: T,
+}
 
 /**
  * An element that can be hovered on. The game will hold the element that was most recently hovered and handle calling

@@ -113,11 +113,34 @@ export class Board {
 
         // Mark all tiles as movable, which will update their graphics, and flag them as possible move targets
         for (const pos of movable) {
-            this.tileAt(pos.x, pos.y).setMovable();
+            this.tileAt(pos.x, pos.y).setMarked();
         }
     }
 
-    public stopMoving(): void {
+
+    public startSummoning(): void {
+        // Find all tiles that are reachable by the player, and mark them as movable
+        const player: Player = this.game.player;
+        const movable: Set<Point> = Pathfinder.findAll(player.pos, player.summonRange, pos => {
+            if (!Util.isIn(pos.x, pos.y, 0, 0, this.tileWidth, this.tileHeight)) {
+                return Infinity; // Not in bounds, unable to move
+            }
+            
+            const tile = this.tileAt(pos.x, pos.y);
+            if (!tile.properties().isMovable) {
+                return Infinity; // Tile is not movable
+            }
+
+            return 1; // All tiles cost one movement to walk through (for now)
+        });
+
+        // Mark all tiles as movable, which will update their graphics, and flag them as possible move targets
+        for (const pos of movable) {
+            this.tileAt(pos.x, pos.y).setMarked();
+        }
+    }
+
+    public clearMarked(): void {
         for (const tile of this.tiles) {
             tile.clearMovable();
         }
@@ -145,9 +168,15 @@ export class Board {
 
         // For now, just move the player if they have a planned move, then clear their plan
         const player: Player = this.game.player;
-        if (player.plan) {
-            this.moveEntity(player, player.plan.x, player.plan.y);
+        if (player.plan?.type === 'move')   {
+            this.moveEntity(player, player.plan.pos.x, player.plan.pos.y);
             player.plan = null;
+        }
+        else if(player.plan?.type === 'summon') {
+            if(player.plan.summonWork-- <= 0) {
+                this.addEntity(player.plan.summon);
+                this.moveEntity(player.plan.summon, player.plan.pos.x, player.plan.pos.y);
+            }
         }
 
         // 4. Animate / Feedback
@@ -170,11 +199,19 @@ export class Board {
                     // If moving, and the tile is movable, we confirm movement
                     // Then, we need to clear all movable flags
                     if (tile.isMovable()) {
-                        this.stopMoving();
-                        this.game.confirmMoving(tilePos);
+                        this.clearMarked();
+                        this.game.confirmMoving(tile);
                         return true;
                     }
                     break;
+                case State.SUMMONING_POSITION:
+                    // If summon, and the tile is movable we can confirm summoning.
+                    // Then, we need to clear all movable flags.
+                    if (tile.isMovable()) {
+                        this.clearMarked();
+                        this.game.summonConfirm(tile);
+                        return true;
+                    }
             }
         }
         return false;
@@ -326,7 +363,7 @@ class Tile {
         this.hover = null;
     }
 
-    setMovable(): void {
+    setMarked(): void {
         this.clearMovable();
         this.root.addChild(this.move = new PIXI.Graphics()
             .beginFill(0x35de62)

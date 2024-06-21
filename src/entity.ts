@@ -36,3 +36,10 @@ export class Entity {
 interface EntityProperties {
     // todo: imagine what properties would go here
 }
+
+
+import { Summon } from "./Summons";
+
+type SummonPlan = { type: 'summon', summon: Summon, pos: Point, summonWork: number };
+type MovePlan = { type: 'move', pos: Point };
+export type Plan = MovePlan | SummonPlan;

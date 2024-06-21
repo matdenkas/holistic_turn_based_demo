@@ -5,6 +5,7 @@ import { Util } from "./util";
 import { InfoPanel } from "./panel/info";
 import { ActionsPanel } from "./panel/actions";
 import { Player } from "./player";
+import { Summon } from "./Summons";
 
 
 /**
@@ -22,13 +23,18 @@ export const enum State {
     // and all actions are computed. Nothing can be interacted with
     // in this state
     PLAYING,
+    // Summon choice
+    SUMMON_CHOICE,
+    SUMMONING_POSITION,
+    SUMMONING
+
 }
 
 
 export class Game {
     readonly app: Application;
     readonly stage: Container;
-    readonly texture: Texture;
+    readonly texture: Textures<Texture>;
 
     readonly infoPanel: InfoPanel;
     readonly actionPanel: ActionsPanel;
@@ -40,8 +46,12 @@ export class Game {
     state: State = State.NORMAL;
 
     private lastHover: IHoverCallback | null = null;
+    private currentSummon: Summon | null = null;
 
-    constructor(app: Application, texture: Texture) {
+    readonly summons: Summon[];
+    
+
+    constructor(app: Application, texture: Textures<Texture>) {
         window.game = this;
 
         this.app = app;
@@ -57,6 +67,7 @@ export class Game {
         this.stage.on('pointertap', event => this.onClick(event));
         this.stage.on('pointermove', event => this.onHover(event));
 
+        this.summons = Summon.load_Summons();
 
         const TILES = [
             '00000000000000000000',
@@ -86,6 +97,7 @@ export class Game {
         this.player = new Player();
         this.boardPanel.addEntity(this.player);
         this.boardPanel.moveEntity(this.player, 8, 18);
+       
     }
 
 
@@ -100,16 +112,51 @@ export class Game {
     public confirmMoving(pos: Point): void {
         Util.assert(this.state === State.MOVING);
 
-        this.player.plan = pos;
+        this.player.plan = {type: 'move', pos};
         this.cancelMoving();
     }
 
     private cancelMoving(): void {
         Util.assert(this.state === State.MOVING);
 
-        this.boardPanel.stopMoving();
+        this.boardPanel.clearMarked();
         this.actionPanel.updateActions();
         this.state = State.NORMAL;
+    }
+
+
+    public startSummon(): void {
+        Util.assert(this.state === State.NORMAL);
+        this.logPanel.post('Summon start');
+        
+        this.actionPanel.updateActions(
+            this.summons.map((summon) => {
+                return {
+                    text: summon.displayText,
+                    callback: () => this.summonPositionPick(summon)
+                }
+            })
+        );
+
+        
+        this.state = State.SUMMON_CHOICE;
+    }
+    
+    public summonPositionPick(summon: Summon): void {
+        Util.assert(this.state === State.SUMMON_CHOICE);
+
+        this.boardPanel.startSummoning();
+        this.currentSummon = summon;
+        this.state = State.SUMMONING_POSITION;
+    }
+
+    public summonConfirm(pos: Point){
+        Util.assert(this.state === State.SUMMONING_POSITION);
+
+        this.actionPanel.updateActions(); // refresh actions
+        
+        this.player.plan = {type: 'summon', summon: this.currentSummon!, pos, summonWork: this.currentSummon!.baseSummonTime}
+        this.state = State.SUMMONING;
     }
 
 

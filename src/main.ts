@@ -1,5 +1,6 @@
 import { Colors, Constants } from "./constants";
 import { Game } from "./game";
+import type { Texture } from "pixi.js";
 
 declare global {
     interface Window {
@@ -14,8 +15,13 @@ async function main() {
     // Loading ...
     // todo: eventually we will want a lot more assets, and asset packing, etc.
     // For now, I'm just using a single example texture for testing
+    const textures = {
+        girl: await PIXI.Assets.load('./assets/GirlGirl.png'),
+        fox: await PIXI.Assets.load('./assets/FoxGirl.png'),
+        slime: await PIXI.Assets.load('./assets/SlimeGirl.png'),
+    }
 
-    const texture = await PIXI.Assets.load('./assets/GirlGirl.png');
+
 
     const app = new PIXI.Application({
         antialias: false,
@@ -26,7 +32,7 @@ async function main() {
         height: Constants.HEIGHT,
     });
     document.body.appendChild(app.view as any);
-    new Game(app, texture);
+    new Game(app, textures);
 }
 
 window.onload = () => main();
