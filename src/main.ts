@@ -1,6 +1,6 @@
 import { Colors, Constants } from "./constants";
 import { Game } from "./game";
-import type { Texture } from "pixi.js";
+
 
 declare global {
     interface Window {

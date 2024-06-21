@@ -1,4 +1,6 @@
 import type { Container } from "pixi.js";
+import type { SummonType } from "./summon";
+
 
 
 /**
@@ -19,12 +21,16 @@ export class Entity {
     readonly root: Container;
     readonly properties: EntityProperties;
 
-    pos: Point;
+    pos: Point = { x: 0, y: 0 };
+
+    /**
+     * Represents the plan the entity has for the following turn(s)
+     */
+    plan: Plan = null;
     
     constructor(properties: Partial<EntityProperties>) {
         this.root = new PIXI.Container();
         this.properties = properties;
-        this.pos = { x: 0, y: 0 };
     }
 
     update(): void {}
@@ -38,8 +44,10 @@ interface EntityProperties {
 }
 
 
-import { Summon } from "./Summons";
-
-type SummonPlan = { type: 'summon', summon: Summon, pos: Point, summonWork: number };
+type SummonPlan = { type: 'summon', summon: SummonType, pos: Point, remainingTurns: number };
 type MovePlan = { type: 'move', pos: Point };
-export type Plan = MovePlan | SummonPlan;
+
+export type Plan = null
+    | MovePlan
+    | SummonPlan
+    ;

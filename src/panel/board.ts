@@ -1,6 +1,6 @@
 import { ColorSource, Container, Graphics } from "pixi.js";
 import { Colors, Constants } from "../constants";
-import { Entity } from "../entity";
+import { Entity, Plan } from "../entity";
 import { Util } from "../util";
 import { Game, State } from "../game";
 import { Pathfinder } from "../pathfinder";
@@ -95,28 +95,29 @@ export class Board {
         PIXI.Ticker.shared.add(this.tick, this);
     }
 
+    /**
+     * Marks all tiles movable that are within a range of the player,
+     * based on their movement speed and the movement speed over the tile.
+     */
     public startMoving(): void {
-        // Find all tiles that are reachable by the player, and mark them as movable
         const player: Player = this.game.player;
         const movable: Set<Point> = Pathfinder.findAll(player.pos, player.movementSpeed, pos => {
             if (!Util.isIn(pos.x, pos.y, 0, 0, this.tileWidth, this.tileHeight)) {
-                return Infinity; // Not in bounds, unable to move
+                return Infinity;
             }
             
             const tile = this.tileAt(pos.x, pos.y);
             if (!tile.properties().isMovable) {
-                return Infinity; // Tile is not movable
+                return Infinity;
             }
 
-            return 1; // All tiles cost one movement to walk through (for now)
+            return tile.properties().moveSpeed;
         });
 
-        // Mark all tiles as movable, which will update their graphics, and flag them as possible move targets
         for (const pos of movable) {
             this.tileAt(pos.x, pos.y).setMarked();
         }
     }
-
 
     public startSummoning(): void {
         // Find all tiles that are reachable by the player, and mark them as movable
@@ -128,21 +129,20 @@ export class Board {
             
             const tile = this.tileAt(pos.x, pos.y);
             if (!tile.properties().isMovable) {
-                return Infinity; // Tile is not movable
+                return Infinity;
             }
 
-            return 1; // All tiles cost one movement to walk through (for now)
+            return 1;
         });
 
-        // Mark all tiles as movable, which will update their graphics, and flag them as possible move targets
         for (const pos of movable) {
             this.tileAt(pos.x, pos.y).setMarked();
         }
     }
 
-    public clearMarked(): void {
+    public clearAllMarkedTiles(): void {
         for (const tile of this.tiles) {
-            tile.clearMovable();
+            tile.clearMarked();
         }
     }
 
@@ -166,16 +166,28 @@ export class Board {
         
         // 3. All update (update)
 
-        // For now, just move the player if they have a planned move, then clear their plan
-        const player: Player = this.game.player;
-        if (player.plan?.type === 'move')   {
-            this.moveEntity(player, player.plan.pos.x, player.plan.pos.y);
-            player.plan = null;
-        }
-        else if(player.plan?.type === 'summon') {
-            if(player.plan.summonWork-- <= 0) {
-                this.addEntity(player.plan.summon);
-                this.moveEntity(player.plan.summon, player.plan.pos.x, player.plan.pos.y);
+        // todo: this shouldn't use `this.entities`, it should use a computed order from step 2
+        for (const entity of this.entities) {
+            const plan: Plan = entity.plan;
+
+            switch (plan?.type) {
+                case 'move':
+                    // Move to the planned destination
+                    // todo: handle conflicts
+                    this.moveEntity(entity, plan.pos.x, plan.pos.y);
+                    entity.plan = null;
+                    break;
+                case 'summon':
+                    // Summoning may take multiple turns to channel
+                    // Once complete, create a new entity from the summon and place it
+                    if (plan.remainingTurns-- <= 0) {
+                        const summon: Entity = plan.summon.summon();
+
+                        this.addEntity(summon);
+                        this.moveEntity(summon, plan.pos.x, plan.pos.y);
+                        entity.plan = null;
+                    }
+                    break;
             }
         }
 
@@ -198,8 +210,8 @@ export class Board {
                 case State.MOVING:
                     // If moving, and the tile is movable, we confirm movement
                     // Then, we need to clear all movable flags
-                    if (tile.isMovable()) {
-                        this.clearMarked();
+                    if (tile.isMarked()) {
+                        this.clearAllMarkedTiles();
                         this.game.confirmMoving(tile);
                         return true;
                     }
@@ -207,9 +219,9 @@ export class Board {
                 case State.SUMMONING_POSITION:
                     // If summon, and the tile is movable we can confirm summoning.
                     // Then, we need to clear all movable flags.
-                    if (tile.isMovable()) {
-                        this.clearMarked();
-                        this.game.summonConfirm(tile);
+                    if (tile.isMarked()) {
+                        this.clearAllMarkedTiles();
+                        this.game.confirmSummon(tile);
                         return true;
                     }
             }
@@ -304,6 +316,12 @@ interface TileProperties {
     readonly desc: string;
     readonly color: ColorSource;
     readonly isMovable: boolean;
+
+    /**
+     * How many movement points it costs to move through this tile. Higher numbers mean
+     * that entities move slower through the tile.
+     */
+    readonly moveSpeed: number;
 }
 
 
@@ -313,11 +331,11 @@ class Tile {
 
     private static readonly PROPERTIES: TileProperties[] = (() => {
         function of(name: string, desc: string, color: ColorSource, properties: Partial<TileProperties> = {}): TileProperties {
-            return Object.assign({ isMovable: true }, { name, desc, color, ...properties });
+            return Object.assign({ isMovable: true, moveSpeed: 1.0 }, { name, desc, color, ...properties });
         }
     
         return [
-            of('Sand', 'Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 0xb8a254),
+            of('Sand', 'Its so sandy! Yuck! I hate sand, its corse rough and gets everywhere!', 0xb8a254, { moveSpeed: 0.5 }),
             of('Grass', 'Such nice soft grass!', 0x49822f),
             of('Water', 'Remember slimes are allergic to water!', 0x6093d1, { isMovable: false }),
             of('Rock', 'Rock solid :3', 0x615029, { isMovable: false }),
@@ -332,7 +350,7 @@ class Tile {
     readonly y: number;
 
     hover: Graphics | null = null;
-    move: Graphics | null = null;
+    mark: Graphics | null = null;
 
     constructor(id: TileId, x: number, y: number) {
         this.root = new PIXI.Container();
@@ -364,19 +382,19 @@ class Tile {
     }
 
     setMarked(): void {
-        this.clearMovable();
-        this.root.addChild(this.move = new PIXI.Graphics()
+        this.clearMarked();
+        this.root.addChild(this.mark = new PIXI.Graphics()
             .beginFill(0x35de62)
             .drawCircle(0, 0, 0.3 * Tile.SIZE)
             .endFill());
     }
 
-    clearMovable(): void {
-        this.move?.removeFromParent();
-        this.move = null;
+    clearMarked(): void {
+        this.mark?.removeFromParent();
+        this.mark = null;
     }
 
-    isMovable(): boolean {
-        return this.move != null;
+    isMarked(): boolean {
+        return this.mark != null;
     }
 }

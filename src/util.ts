@@ -2,7 +2,13 @@ export module Util {
 
     export function assert(that: boolean): asserts that is true {
         if (!that) {
-            throw new Error(`Assertion Failed`);
+            throw new Error(`assertThat() Failed`);
+        }
+    }
+
+    export function assertNotNull<T>(value: T | null | undefined): asserts value is T {
+        if (!value) {
+            throw new Error(`assertNotNull() Failed`);
         }
     }
 

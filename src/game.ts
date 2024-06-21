@@ -1,11 +1,11 @@
 import type { Application, Container, Texture } from "pixi.js";
-import { Log as LogPanel } from "./panel/log";
+import { Log } from "./panel/log";
 import { Board } from "./panel/board";
 import { Util } from "./util";
 import { InfoPanel } from "./panel/info";
 import { ActionsPanel } from "./panel/actions";
 import { Player } from "./player";
-import { Summon } from "./Summons";
+import { Summon, SummonType } from "./summon";
 
 
 /**
@@ -23,11 +23,12 @@ export const enum State {
     // and all actions are computed. Nothing can be interacted with
     // in this state
     PLAYING,
-    // Summon choice
+    // Starting a summon. The player must then select a further action
+    // which selects which summon to complete
     SUMMON_CHOICE,
+    // A summon entity has been selected, and the player must then select
+    // a position to summon the entity at
     SUMMONING_POSITION,
-    SUMMONING
-
 }
 
 
@@ -39,17 +40,16 @@ export class Game {
     readonly infoPanel: InfoPanel;
     readonly actionPanel: ActionsPanel;
     readonly boardPanel: Board;
-    readonly logPanel: LogPanel;
+    readonly logPanel: Log;
 
     readonly player: Player;
 
     state: State = State.NORMAL;
 
     private lastHover: IHoverCallback | null = null;
-    private currentSummon: Summon | null = null;
-
-    readonly summons: Summon[];
+    private currentSummon: SummonType | null = null;
     
+    private summons: SummonType[] = Summon.load();
 
     constructor(app: Application, texture: Textures<Texture>) {
         window.game = this;
@@ -62,12 +62,11 @@ export class Game {
         this.infoPanel = new InfoPanel(this.stage);
         this.actionPanel = new ActionsPanel(this);
         this.boardPanel = new Board(this);
-        this.logPanel = new LogPanel(this.stage);
+        this.logPanel = new Log(this.stage);
 
         this.stage.on('pointertap', event => this.onClick(event));
         this.stage.on('pointermove', event => this.onHover(event));
 
-        this.summons = Summon.load_Summons();
 
         const TILES = [
             '00000000000000000000',
@@ -119,7 +118,7 @@ export class Game {
     private cancelMoving(): void {
         Util.assert(this.state === State.MOVING);
 
-        this.boardPanel.clearMarked();
+        this.boardPanel.clearAllMarkedTiles();
         this.actionPanel.updateActions();
         this.state = State.NORMAL;
     }
@@ -130,19 +129,16 @@ export class Game {
         this.logPanel.post('Summon start');
         
         this.actionPanel.updateActions(
-            this.summons.map((summon) => {
-                return {
-                    text: summon.displayText,
-                    callback: () => this.summonPositionPick(summon)
-                }
-            })
+            this.summons.map(summon => ({
+                text: summon.displayText,
+                callback: () => this.summonPositionPick(summon)
+            }))
         );
 
-        
         this.state = State.SUMMON_CHOICE;
     }
     
-    public summonPositionPick(summon: Summon): void {
+    public summonPositionPick(summon: SummonType): void {
         Util.assert(this.state === State.SUMMON_CHOICE);
 
         this.boardPanel.startSummoning();
@@ -150,13 +146,15 @@ export class Game {
         this.state = State.SUMMONING_POSITION;
     }
 
-    public summonConfirm(pos: Point){
+    public confirmSummon(pos: Point){
         Util.assert(this.state === State.SUMMONING_POSITION);
+        Util.assertNotNull(this.currentSummon);
+
+        const summon = this.currentSummon;
 
         this.actionPanel.updateActions(); // refresh actions
-        
-        this.player.plan = {type: 'summon', summon: this.currentSummon!, pos, summonWork: this.currentSummon!.baseSummonTime}
-        this.state = State.SUMMONING;
+        this.player.plan = { type: 'summon', summon, pos, remainingTurns: summon.summonTurns };
+        this.state = State.NORMAL;
     }
 
 
@@ -166,7 +164,7 @@ export class Game {
         return Util.tryClick(this.boardPanel, pos)
             || Util.tryClick(this.actionPanel, pos)
             || Util.tryClick(this.infoPanel, pos);
-            // can chain additional things here with &&, i.e. short circuiting
+            // can chain additional things here with ||, i.e. short circuiting
     }
 
 
